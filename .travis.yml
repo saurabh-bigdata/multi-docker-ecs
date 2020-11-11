@@ -1,0 +1,25 @@
+language: generic
+sudo: required
+
+services:
+  - docker
+
+before_install:
+    - docker build -t saurabhbigdata/multi-client-test -f ./client/Dockerfile.dev ./client
+
+script:
+    - docker run -e CI=true saurabhbigdata/multi-client-test npm run test
+
+after_success:
+    # build prod images
+    - docker build -t saurabhbigdata/multi-client -f ./client/Dockerfile ./client
+    - docker build -t saurabhbigdata/multi-server -f ./server/Dockerfile ./server
+    - docker build -t saurabhbigdata/multi-worker -f ./worker/Dockerfile ./worker
+    - docker build -t saurabhbigdata/multi-nginx -f ./nginx/Dockerfile ./nginx
+    # login to docker account
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+    # push prod images to docker
+    - docker push saurabhbigdata/multi-client
+    - docker push saurabhbigdata/multi-server
+    - docker push saurabhbigdata/multi-worker
+    - docker push saurabhbigdata/multi-nginx
